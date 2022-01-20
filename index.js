@@ -13,7 +13,6 @@ const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Disc
 client.commands = new Discord.Collection()
 client.textTriggers = new Discord.Collection()
 
-let librusCurrentBearer
 let autoMemesChannel
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'))
 
@@ -38,9 +37,6 @@ async function updateSlashCommands() {
 }
 
 threadwatcher.newReply.on('newPost', async (board, threadID, postID, text, attachmentUrl) => {
-  // console.log(`${board}/${threadID}/p${postID}`)
-  // console.log(text)
-  // console.log(attachmentUrl)
   await autoMemesChannel.send({
     content: `<https://boards.4channel.org/${board}/thread/${threadID}#p${postID}>`,
     files: [attachmentUrl]
