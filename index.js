@@ -12,7 +12,8 @@ const incrementDays = require('./lib/incrementDays')
 const discordEvents = require('./lib/discordEvents')
 const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_VOICE_STATES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS], partials: ['MESSAGE', 'CHANNEL', 'REACTION'] })
 client.commands = new Discord.Collection()
-client.textTriggers = new Discord.Collection()
+client.buttonInteractions = new Discord.Collection()
+// client.textTriggers = new Discord.Collection()
 
 let autoMemesChannel
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'))
@@ -35,6 +36,13 @@ async function updateSlashCommands() {
 	// const response = await client.application?.commands.set(slashCommands)
 	// console.log(response)
 }
+function updateButtonInteractions() {
+	const buttonInteractionFiles = fs.readdirSync('./interactions').filter(file => file.endsWith('.js'))
+	for (const file of buttonInteractionFiles) {
+		const buttonInteract = require(`./interactions/${file}`)
+		client.buttonInteractions.set(buttonInteract.name, buttonInteract)
+	}
+}
 
 threadwatcher.newReply.on('newPost', async (board, threadID, postID, text, attachmentUrl) => {
 	// console.log(`${board}/${threadID}/p${postID}`)
@@ -54,6 +62,7 @@ client.once('ready', async () => {
 	client.user.setActivity('twoja stara')
 
 	updateSlashCommands()
+	updateButtonInteractions()
 	cronJobs(client)
 
 	console.log(`Ready! Logged in as ${client.user.tag}`)
