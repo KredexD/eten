@@ -18,11 +18,6 @@ module.exports = {
 						.setDescription('Gracz do wyzwania')
 						.setRequired(true),
 				),
-		)
-		.addSubcommand(
-			new SlashCommandSubcommandBuilder()
-				.setName('plansza')
-				.setDescription('Pokaż planszę gry z twoimi statkami'),
 		),
 	async execute(interaction) {
 		if (interaction.options.getSubcommand() === 'wyzwij') {
@@ -65,16 +60,6 @@ module.exports = {
 				)
 			const msg = await interaction.reply({ content: `<@${challenged.id}>, ${challenger.username} wyzwał cię na pojedynek mistrzów xiaolin`, components: [row] })
 			statki.pendingChallenges.set(challenger.id, { userId: challenged.id, time: new Date().getTime(), message: msg })
-		}
-		else if (interaction.options.getSubcommand() === 'plansza') {
-			if (!statki.userGamesMap.has(interaction.user.id)) {
-				await interaction.reply({ content: 'Nie jesteś obecnie w grze.', ephemeral: true })
-				return
-			}
-			const gameId = statki.userGamesMap.get(interaction.user.id)
-			await statki.renderGame(gameId)
-			
-			interaction.reply({ content: 'image link here', ephemeral: true })
 		}
 	},
 }

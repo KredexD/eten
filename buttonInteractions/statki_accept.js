@@ -1,5 +1,6 @@
 'use strict'
 
+const { MessageActionRow, Message, MessageButton } = require('discord.js')
 const { statki, shotState } = require('../lib/statkiManager')
 
 /**
@@ -10,7 +11,7 @@ function createBoard() {
 	for (let i = 0; i < 10; i++) {
 		shotsMatrix[i] = new Array(10)
 		for (let j = 0; j < 10; j++)
-			shotsMatrix[i][j] = shotState.NOT_SHOT
+			shotsMatrix[i][j] = { shot: shotState.NOT_SHOT, ship: -1 }
 	}
 	return shotsMatrix
 }
@@ -21,9 +22,9 @@ function createBoard() {
  */
 function createShips(sizes) {
 	const ships = {}
-	let id = 0
+	let id = 1
 	for (const item of sizes) {
-		ships[`id${id}`] = {
+		ships[id] = {
 			placed: false,
 			initialSize: item,
 			sizeLeft: item,
@@ -42,7 +43,7 @@ module.exports = {
 		const challengerUserId = buttonInteraction.customId.split('#')[1]
 		const challengedUserId = buttonInteraction.user.id
 		if (statki.pendingChallenges.get(challengerUserId).userId !== challengedUserId) {
-			await buttonInteraction.reply({ content: 'To nie jest twoje zaproszenie.', ephemeral: true })
+			await buttonInteraction.reply({ content: 'Nie możesz tego zrobić.', ephemeral: true })
 			return
 		}
 		if (statki.userGamesMap.has(challengerUserId)) {
@@ -57,6 +58,7 @@ module.exports = {
 		statki.userGamesMap.set(challengerUserId, buttonInteraction.message.id)
 		statki.userGamesMap.set(challengedUserId, buttonInteraction.message.id)
 		statki.gameState.set(buttonInteraction.message.id, {
+			state: 0,
 			turn: challengerUserId,
 			player1: {
 				id: challengerUserId,
@@ -81,11 +83,16 @@ module.exports = {
 				shotsHistory: [],
 			},
 		})
+		const board = new MessageActionRow()
+			.setComponents(
+				new MessageButton()
+					.setCustomId('statki_board')
+					.setLabel('Pokaż planszę')
+					.setStyle('PRIMARY'),
+			)
 		buttonInteraction.update({
-			content: `Gra rozpoczęta!
-			Użyjcie komedy \`/statki plansza\` aby zobaczyć swoją planszę na której możecie rozkładać swoje statki.
-			Ostrzał się rozpocznie gdy oboje gracze ułożą swoje statki.`.replace('\t', ''),
-			components: [],
+			content: '**<:hard:884234129363836928> Gra rozpoczęta! <:hard:884234129363836928>**\nRozstawiaj statki!\nOstrzał się rozpocznie gdy oboje gracze będą gotowi.',
+			components: [board],
 		})
 	},
 }
