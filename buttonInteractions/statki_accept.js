@@ -1,7 +1,7 @@
 'use strict'
 
-const { MessageActionRow, Message, MessageButton } = require('discord.js')
-const { statki, shotState } = require('../lib/statkiManager')
+const { MessageActionRow, MessageButton } = require('discord.js')
+const { statkiManager, statkiCellState, statkiGameState } = require('../lib/statkiManager')
 
 /**
  * Generate 2D Array initalized with appropriate cell data
@@ -11,7 +11,7 @@ function createBoard() {
 	for (let i = 0; i < 10; i++) {
 		shotsMatrix[i] = new Array(10)
 		for (let j = 0; j < 10; j++)
-			shotsMatrix[i][j] = { shot: shotState.NOT_SHOT, ship: -1 }
+			shotsMatrix[i][j] = { shot: statkiCellState.NOT_SHOT, ship: null }
 	}
 	return shotsMatrix
 }
@@ -42,52 +42,58 @@ module.exports = {
 	async execute(buttonInteraction) {
 		const challengerUserId = buttonInteraction.customId.split('#')[1]
 		const challengedUserId = buttonInteraction.user.id
-		if (statki.pendingChallenges.get(challengerUserId).userId !== challengedUserId) {
+		if (statkiManager.pendingChallenges.get(challengerUserId).userId !== challengedUserId) {
 			await buttonInteraction.reply({ content: 'Nie możesz tego zrobić.', ephemeral: true })
 			return
 		}
-		if (statki.userGamesMap.has(challengerUserId)) {
+		if (statkiManager.userGamesMap.has(challengerUserId)) {
 			await buttonInteraction.reply({ content: 'NIE POWINIENEŚ TEGO WIDZIEĆ! Osoba, która cię wyzwała już jest w grze...', ephemeral: true })
 			return
 		}
-		if (statki.userGamesMap.has(challengedUserId)) {
+		if (statkiManager.userGamesMap.has(challengedUserId)) {
 			await buttonInteraction.reply({ content: 'NIE POWINIENEŚ TEGO WIDZIEĆ! Nie możesz akceptować nowych wyzwań jak jesteś już w grze!', ephemeral: true })
 			return
 		}
-		statki.pendingChallenges.delete(challengerUserId)
-		statki.userGamesMap.set(challengerUserId, buttonInteraction.message.id)
-		statki.userGamesMap.set(challengedUserId, buttonInteraction.message.id)
-		statki.gameState.set(buttonInteraction.message.id, {
-			state: 0,
+		// Remove challenge
+		statkiManager.pendingChallenges.delete(challengerUserId)
+		// Set both players as in-game
+		statkiManager.userGamesMap.set(challengerUserId, buttonInteraction.message.id)
+		statkiManager.userGamesMap.set(challengedUserId, buttonInteraction.message.id)
+		// Create the initial game data
+		statkiManager.gameDataMap.set(buttonInteraction.message.id, {
+			state: statkiGameState.PREPLANNING,
 			turn: challengerUserId,
 			player1: {
 				id: challengerUserId,
 				ephemeralMessage: null,
 				shipsLeft: 7,
 				ships: createShips([5, 4, 3, 2, 2, 1, 1]),
+				selectedShip: null,
 				board: createBoard(),
-				shotsHistory: [
-					/**
-					 * x: number
-					 * y: number
-					 * hit: boolean
-					 */
-				],
+				// shotsHistory: [
+				// 	/**
+				// 	 * x: number
+				// 	 * y: number
+				// 	 * hit: boolean
+				// 	 */
+				// ],
 			},
 			player2: {
 				id: challengedUserId,
 				ephemeralMessage: null,
 				shipsLeft: 7,
 				ships: createShips([5, 4, 3, 2, 2, 1, 1]),
+				selectedShip: null,
 				board: createBoard(),
-				shotsHistory: [],
+				// shotsHistory: [],
 			},
 		})
+
 		const board = new MessageActionRow()
 			.setComponents(
 				new MessageButton()
 					.setCustomId('statki_board')
-					.setLabel('Pokaż planszę')
+					.setLabel('Ustaw statki')
 					.setStyle('PRIMARY'),
 			)
 		buttonInteraction.update({

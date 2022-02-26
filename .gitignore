@@ -3,6 +3,9 @@ config.json
 cronImageSend.json
 placeholder.jpg
 data/*
+!data/statki/
+data/statki/*.jpg
+data/statki/*.png
 !data/leg60.png
 soundeffects/*
 .vscode

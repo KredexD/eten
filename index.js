@@ -8,10 +8,8 @@ const createRequiredFiles = require('./lib/createRequiredFiles')
 const cronJobs = require('./lib/cronJobs')
 const randomSounds = require('./lib/randomSoundOnVC')
 const librus = require('./lib/librus')
-const statkiManager = require('./lib/statkiManager')
 const incrementDays = require('./lib/incrementDays')
 const discordEvents = require('./lib/discordEvents')
-const { setStatkiChannel } = require('./lib/statkiManager')
 const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_VOICE_STATES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS], partials: ['MESSAGE', 'CHANNEL', 'REACTION'] })
 client.commands = new Discord.Collection()
 client.buttonInteractions = new Discord.Collection()
@@ -35,8 +33,8 @@ async function updateSlashCommands() {
 		for (const alias in command.aliases)
 			client.commands.set(command.aliases[alias], command)
 	}
-	const response = await client.application.commands.set(slashCommands)
-	console.log(response)
+	// const response = await client.application.commands.set(slashCommands)
+	// console.log(response)
 }
 function updateButtonInteractions() {
 	const buttonInteractionFiles = fs.readdirSync('./buttonInteractions').filter(file => file.endsWith('.js'))
@@ -44,6 +42,7 @@ function updateButtonInteractions() {
 		const buttonInteract = require(`./buttonInteractions/${file}`)
 		client.buttonInteractions.set(buttonInteract.name, buttonInteract)
 	}
+	console.debug(client.buttonInteractions)
 }
 
 threadwatcher.newReply.on('newPost', async (board, threadID, postID, text, attachmentUrl) => {
@@ -70,9 +69,9 @@ client.once('ready', async () => {
 	console.log(`Ready! Logged in as ${client.user.tag}`)
 
 	// autoMemesChannel = await client.channels.fetch(config.autoMemesChannel)
-
+	// Replace with Maslo's channel ()
+	client.imageCdnChannel = await client.channels.fetch(config.statkiChannel)
 	incrementDays()
-	setStatkiChannel(await client.channels.fetch(config.statkiChannel))
 	// librus(client)
 	// randomSounds(client)
 })
