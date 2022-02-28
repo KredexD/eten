@@ -1,8 +1,10 @@
 'use strict'
 
+import { CommandInteraction } from "discord.js"
+
 const { SlashCommandBuilder, SlashCommandUserOption, SlashCommandSubcommandBuilder } = require('@discordjs/builders')
 const { MessageButton, MessageActionRow } = require('discord.js')
-const { statkiManager } = require('../lib/statkiManager')
+const statki = require('../lib/statkiManager')
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -19,7 +21,7 @@ module.exports = {
 						.setRequired(true),
 				),
 		),
-	async execute(interaction) {
+	async execute(interaction: CommandInteraction) {
 		if (interaction.options.getSubcommand() === 'wyzwij') {
 			const challenger = interaction.user
 			const challenged = interaction.options.getUser('gracz')

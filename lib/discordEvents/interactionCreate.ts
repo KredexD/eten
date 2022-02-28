@@ -1,8 +1,10 @@
 'use strict'
 
-module.exports = async function(interaction) {
+import { Interaction } from "discord.js"
+
+export default async function(interaction: Interaction) {
 	const client = interaction.client
-	// To do zmiany
+	// To ogólnie do zmiany
 	if (interaction.isButton()) {
 		if (interaction.customId.startsWith('statki_')) {
 			console.debug(interaction.customId)
@@ -45,7 +47,7 @@ module.exports = async function(interaction) {
 		catch (error2) {
 			console.log('Error: Couldn\'t reply, probably already replied, trying to edit')
 			console.log(error2)
-			await interaction.editReply({ content: 'There was an error while executing this command!', ephemeral: true })
+			await interaction.editReply({ content: 'There was an error while executing this command!' })
 		}
 	}
 }

@@ -1,6 +1,6 @@
 'use strict'
 
-const Discord = require('discord.js')
+import Discord from 'discord.js'
 const config = require('./config.json')
 const fs = require('fs')
 const threadwatcher = require('./lib/threadwatcher')
@@ -9,18 +9,23 @@ const cronJobs = require('./lib/cronJobs')
 const randomSounds = require('./lib/randomSoundOnVC')
 const librus = require('./lib/librus')
 const incrementDays = require('./lib/incrementDays')
-const discordEvents = require('./lib/discordEvents')
+import * as discordEvents from './lib/discordEvents'
+
+declare module 'discord.js' {
+	interface Client {
+		commands: Discord.Collection<string, {data: string, execute: Function}>
+		buttonInteractions: Discord.Collection<string, {data: string, execute: Function}>
+		imageCdnChannel: Discord.AnyChannel
+	}
+}
+
 const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_VOICE_STATES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS], partials: ['MESSAGE', 'CHANNEL', 'REACTION'] })
 client.commands = new Discord.Collection()
 client.buttonInteractions = new Discord.Collection()
 // client.textTriggers = new Discord.Collection()
 
-let autoMemesChannel
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'))
-
-// TODO: Regex triggers for free text? ("/ROZPIERDOL.+KOTA/gi")
-// Won't this overload the bot if there are too many?
-// TODO: Handling for editReply in interactions? and stuff
+let autoMemesChannel: Discord.AnyChannel
+const commandFiles = fs.readdirSync('./commands').filter((file: string) => file.endsWith('.js'))
 
 async function updateSlashCommands() {
 	const slashCommands = []
@@ -37,7 +42,7 @@ async function updateSlashCommands() {
 	// console.log(response)
 }
 function updateButtonInteractions() {
-	const buttonInteractionFiles = fs.readdirSync('./buttonInteractions').filter(file => file.endsWith('.js'))
+	const buttonInteractionFiles = fs.readdirSync('./buttonInteractions').filter((file: string) => file.endsWith('.js'))
 	for (const file of buttonInteractionFiles) {
 		const buttonInteract = require(`./buttonInteractions/${file}`)
 		client.buttonInteractions.set(buttonInteract.name, buttonInteract)
@@ -45,11 +50,11 @@ function updateButtonInteractions() {
 	console.debug(client.buttonInteractions)
 }
 
-threadwatcher.newReply.on('newPost', async (board, threadID, postID, text, attachmentUrl) => {
+threadwatcher.newReply.on('newPost', async (board: any, threadID: any, postID: any, text: any, attachmentUrl: any) => {
 	// console.log(`${board}/${threadID}/p${postID}`)
 	// console.log(text)
 	// console.log(attachmentUrl)
-	await autoMemesChannel.send({
+	await (autoMemesChannel as Discord.TextChannel).send({
 		content: `<https://boards.4channel.org/${board}/thread/${threadID}#p${postID}>`,
 		files: [attachmentUrl],
 	})
@@ -68,7 +73,7 @@ client.once('ready', async () => {
 
 	console.log(`Ready! Logged in as ${client.user.tag}`)
 
-	// autoMemesChannel = await client.channels.fetch(config.autoMemesChannel)
+	autoMemesChannel = await client.channels.fetch(config.autoMemesChannel)
 	// Replace with Maslo's channel ()
 	client.imageCdnChannel = await client.channels.fetch(config.statkiChannel)
 	incrementDays()
