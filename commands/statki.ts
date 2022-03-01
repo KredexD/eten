@@ -1,10 +1,9 @@
 'use strict'
 
-import { CommandInteraction } from "discord.js"
+import { CommandInteraction, Message, MessageButton, MessageActionRow } from "discord.js"
 
-const { SlashCommandBuilder, SlashCommandUserOption, SlashCommandSubcommandBuilder } = require('@discordjs/builders')
-const { MessageButton, MessageActionRow } = require('discord.js')
-const statki = require('../lib/statkiManager')
+import { SlashCommandBuilder, SlashCommandUserOption, SlashCommandSubcommandBuilder } from '@discordjs/builders'
+import { statkiManager } from '../lib/statkiManager'
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -37,8 +36,8 @@ module.exports = {
 				await interaction.reply({ content: 'Twój przeciwnik jest już w grze!', ephemeral: true })
 				return
 			}
-			if (statkiManager.pendingChallenges.has(challenger.id)) {
-				const lastChallenge = statkiManager.pendingChallenges.get(challenger.id)
+			if (statkiManager.pendingChallengesMap.has(challenger.id)) {
+				const lastChallenge = statkiManager.pendingChallengesMap.get(challenger.id)
 				if (lastChallenge.userId === challenged.id) {
 					if (lastChallenge.time > new Date().getTime() - 1000 * 60 * 60 * 2) {
 						await interaction.reply({ content: 'Już wyzwałeś tego gracza!', ephemeral: true })
@@ -60,8 +59,14 @@ module.exports = {
 						.setLabel('Odrzuć')
 						.setStyle('DANGER'),
 				)
-			const msg = await interaction.reply({ content: `<@${challenged.id}>, ${challenger.username} wyzwał cię na pojedynek mistrzów xiaolin`, components: [row] })
-			statkiManager.pendingChallenges.set(challenger.id, { userId: challenged.id, time: new Date().getTime(), message: msg })
+			const msg = await interaction.reply(
+				{
+					content: `<@${challenged.id}>, ${challenger.username} wyzwał cię na pojedynek mistrzów xiaolin`,
+					components: [row],
+					fetchReply: true
+				}
+			)
+			statkiManager.pendingChallengesMap.set(challenger.id, { userId: challenged.id, time: new Date().getTime(), message: (msg as Message) })
 		}
 	},
 }

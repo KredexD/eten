@@ -48,14 +48,12 @@ module.exports = {
 
 		const shipSelection = []
 		for (const [shipId, shipData] of Object.entries(gameData[player].ships)) {
-			let shipDisabled = false
-			if (shipData.placed)
-				shipDisabled = true
-			// Lmao
-			shipSelection.push({
-				label: shipLengthToName[shipData.initialSize],
-				value: shipId,
-			})
+			if (!shipData.placed) {
+				shipSelection.push({
+					label: shipLengthToName[shipData.initialSize],
+					value: shipId,
+				})
+			}
 		}
 		const actionsComponentsArray = [
 			new MessageActionRow()

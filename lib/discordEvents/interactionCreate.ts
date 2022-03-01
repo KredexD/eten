@@ -1,16 +1,17 @@
 'use strict'
 
-import { Interaction } from "discord.js"
+import { ButtonInteraction, Interaction } from "discord.js"
+import { buttonInteractions } from '../../buttonInteractions/'
+// console.debug(buttonInteractions)
 
-export default async function(interaction: Interaction) {
+export async function onInteractionCreate(interaction: Interaction) {
 	const client = interaction.client
-	// To ogólnie do zmiany
 	if (interaction.isButton()) {
 		if (interaction.customId.startsWith('statki_')) {
 			console.debug(interaction.customId)
 			try {
-				console.debug(interaction.customId.split('#')[0])
-				await client.buttonInteractions.get(interaction.customId.split('#')[0]).execute(interaction)
+				const buttonName = interaction.customId.split('#')[0]
+				await buttonInteractions[buttonName](interaction as ButtonInteraction)
 			}
 			catch (error) {
 				console.error(error)

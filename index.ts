@@ -14,23 +14,21 @@ import * as discordEvents from './lib/discordEvents'
 declare module 'discord.js' {
 	interface Client {
 		commands: Discord.Collection<string, {data: string, execute: Function}>
-		buttonInteractions: Discord.Collection<string, {data: string, execute: Function}>
 		imageCdnChannel: Discord.AnyChannel
 	}
 }
 
 const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_VOICE_STATES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS], partials: ['MESSAGE', 'CHANNEL', 'REACTION'] })
 client.commands = new Discord.Collection()
-client.buttonInteractions = new Discord.Collection()
 // client.textTriggers = new Discord.Collection()
 
 let autoMemesChannel: Discord.AnyChannel
-const commandFiles = fs.readdirSync('./commands').filter((file: string) => file.endsWith('.js'))
 
-async function updateSlashCommands() {
+function updateSlashCommands() {
+	const commandFiles = fs.readdirSync(`${__dirname}/commands`).filter((file: string) => file.endsWith('.js'))
 	const slashCommands = []
 	for (const file of commandFiles) {
-		const command = require(`./commands/${file}`)
+		const command = require(`${__dirname}/commands/${file}`)
 		client.commands.set(command.data.name, command)
 
 		slashCommands.push(command.data.toJSON())
@@ -40,14 +38,7 @@ async function updateSlashCommands() {
 	}
 	// const response = await client.application.commands.set(slashCommands)
 	// console.log(response)
-}
-function updateButtonInteractions() {
-	const buttonInteractionFiles = fs.readdirSync('./buttonInteractions').filter((file: string) => file.endsWith('.js'))
-	for (const file of buttonInteractionFiles) {
-		const buttonInteract = require(`./buttonInteractions/${file}`)
-		client.buttonInteractions.set(buttonInteract.name, buttonInteract)
-	}
-	console.debug(client.buttonInteractions)
+	// console.debug(client.commands)
 }
 
 threadwatcher.newReply.on('newPost', async (board: any, threadID: any, postID: any, text: any, attachmentUrl: any) => {
@@ -68,12 +59,11 @@ client.once('ready', async () => {
 	client.user.setActivity('twoja stara')
 
 	updateSlashCommands()
-	updateButtonInteractions()
 	// cronJobs(client)
 
 	console.log(`Ready! Logged in as ${client.user.tag}`)
 
-	autoMemesChannel = await client.channels.fetch(config.autoMemesChannel)
+	// autoMemesChannel = await client.channels.fetch(config.autoMemesChannel)
 	// Replace with Maslo's channel ()
 	client.imageCdnChannel = await client.channels.fetch(config.statkiChannel)
 	incrementDays()
@@ -81,12 +71,12 @@ client.once('ready', async () => {
 	// randomSounds(client)
 })
 
-client.on('messageReactionAdd', discordEvents.messageReactionAdd)
+// client.on('messageReactionAdd', discordEvents.messageReactionAdd)
 
-client.on('messageReactionRemove', discordEvents.messageReactionRemove)
+// client.on('messageReactionRemove', discordEvents.messageReactionRemove)
 
-client.on('messageCreate', discordEvents.messageCreate)
+// client.on('messageCreate', discordEvents.messageCreate)
 
-client.on('interactionCreate', discordEvents.interactionCreate)
+client.on('interactionCreate', discordEvents.onInteractionCreate)
 
 client.login(config.token)

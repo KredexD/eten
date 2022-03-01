@@ -2,8 +2,8 @@
 
 import { Message, Snowflake } from "discord.js"
 
-const canvas = require('canvas')
-const fs = require('fs')
+import canvas from 'canvas'
+import fs from 'fs'
 
 export enum EStatkiCellState {
 	NOT_SHOT = 0,
@@ -38,13 +38,13 @@ export enum EStatkiMoveAction {
 	PLACE = 10
 }
 
-interface IChallengeData {
+interface IStatkiChallenge {
 	userId: Snowflake
 	time: number
 	message: Message
 }
 
-interface IShip {
+export interface IStatkiShip {
 	placed: boolean,
 	initialSize: number
 	sizeLeft: number
@@ -53,41 +53,36 @@ interface IShip {
 	orientation: EStatkiShipOrientation
 }
 
-export interface IShipsCollection {
-	// Despite shipId being an int, we use string for future JSON ease of use?
-	[shipId: string]: IShip
-}
-
-export interface ICellState {
+export interface IStatkiCellState {
 	shot: EStatkiCellState
 	ship: null|string
 }
 
-export interface IPlayerGameData {
+export interface IStatkiGamePlayer {
 	id: Snowflake
-	ephemeralMessageId: Snowflake|null
-	shipsLeft: number
-	ships: IShipsCollection
+	ephemeralMessage: Message|null
+	shipsLeft?: number
+	shipCellsLeft?: number
 	selectedShip: string|null
-	board: Array<Array<ICellState>>
-	shotsHistory?: Array<
+	ships: IStatkiShip[]
+	board: IStatkiCellState[][]
+	shotHistory?: Array<
 		{
 			x: number
 			y: number
-			hit: EStatkiCellState
 		}
 	>,
 }
 
-export interface IGameData {
+export interface IStatkiGame {
 	state: EStatkiGameState
 	turn: Snowflake
 	players: {
-		[player: Snowflake]: IPlayerGameData
+		[userId: Snowflake]: IStatkiGamePlayer
 	}
 }
 
-interface IStatkiStats {
+interface IStatkiPlayerStats {
 	wins: number
 	losses: number
 	forfeits: number // Used for shaming forfeits lol
@@ -96,8 +91,8 @@ interface IStatkiStats {
 	shipsSunk: number
 	shipsLost: number
 	topHitStreak: number // Top streak of consecutive hits
-	hitHeatMap: Array<Array<number>> // counting where the player shot, used for generating heatmaps of favorite shot spots
-	shipHeatMap: Array<Array<number>> // when a ship is in a cell, ++, used for generating heatmaps of favorite ship spots
+	hitHeatMap: number[][] // counting where the player shot, used for generating heatmaps of favorite shot spots
+	shipHeatMap: number[][] // when a ship is in a cell, ++, used for generating heatmaps of favorite ship spots
 }
 
 export class StatkiManager {
@@ -105,7 +100,7 @@ export class StatkiManager {
 	 * Pending challenges Map
 	 * Maps discord userId to challenge data
 	 */
-	pendingChallengesMap: Map<Snowflake, IChallengeData>
+	pendingChallengesMap: Map<Snowflake, IStatkiChallenge>
 	/**
 	 * Map discord userId to GameId (discord's MessageID of the game)
 	 */
@@ -113,16 +108,51 @@ export class StatkiManager {
 	/**
 	 * Map GameId (messageId of the game) to the actual game data
 	 */
-	gameDataMap: Map<Snowflake, IGameData>
+	gameDataMap: Map<Snowflake, IStatkiGame>
 	/**
 	 * Map discord userId to Per-user Stats
 	 */
-	userStatsMap: Map<Snowflake, IStatkiStats>
+	userStatsMap: Map<Snowflake, IStatkiPlayerStats>
 	constructor() {
 		this.pendingChallengesMap = new Map()
 		this.userGamesMap = new Map()
 		this.gameDataMap = new Map()
 		this.userStatsMap = new Map()
+	}
+	/**
+	 * Generate 2D Array initalized with appropriate cell data
+	 */
+	createGameBoard(): IStatkiCellState[][] {
+		const shotsMatrix = new Array(10)
+		for (let i = 0; i < 10; i++) {
+			shotsMatrix[i] = new Array(10)
+			for (let j = 0; j < 10; j++)
+				shotsMatrix[i][j] = { shot: EStatkiCellState.NOT_SHOT, ship: null }
+		}
+		return shotsMatrix
+	}
+
+	/**
+	 * Generate Ships
+	 * @param {[]} sizes
+	 */
+	createShips(sizes: number[]): IStatkiShip[] {
+		const ships: IStatkiShip[] = []
+		// let id = 1
+		for (const size of sizes) {
+			ships.push(
+				{
+					placed: false,
+					initialSize: size,
+					sizeLeft: size,
+					x: null,
+					y: null,
+					orientation: null,
+				}
+			)
+			// id++
+		}
+		return ships
 	}
 	createTemplateCanvas() {
 		const canvasWidth = 660, canvasHeight = 660
@@ -161,7 +191,7 @@ export class StatkiManager {
 		x = 90
 		y = 45
 		for (let i = 1; i <= 10; i++) {
-			ctx.fillText(i, x, y)
+			ctx.fillText(i.toString(), x, y)
 			x += 60
 		}
 		return canvasObj

@@ -1,1 +1,1 @@
-export {default as interactionCreate} from './interactionCreate' 
+export { onInteractionCreate } from './interactionCreate' 
